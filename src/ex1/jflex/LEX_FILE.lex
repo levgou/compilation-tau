@@ -76,6 +76,10 @@ INTEGER			= 0 | [1-9][0-9]*
 CHAR_OR_NUM     = [a-zA-Z0-9]
 CHAR			= [a-zA-Z]
 ID              = {CHAR}{CHAR_OR_NUM}*
+ONE_LINE_COMM   = "//"({CHAR} | {AllowedInComm})*{LineTerminator}?
+COMMENT         = "/*" [^*]{AllowedInComm}* ~"*/" | "/*" "*"+ "/"
+AllowedInComm   = "(" | ")" | "{" | "}" | "[" | "]" | "?" | "!" | "+" | "-" | "." | ";"
+
 
 /******************************/
 /* DOLAR DOLAR - DON'T TOUCH! */
@@ -104,5 +108,7 @@ ID              = {CHAR}{CHAR_OR_NUM}*
 {INTEGER}			{ return symbol(TokenNames.NUMBER, new Integer(yytext()));}
 {ID}				{ return symbol(TokenNames.ID,     new String( yytext()));}   
 {WhiteSpace}		{ /* just skip what was found, do nothing */ }
+{COMMENT}           { /* just skip what was found, do nothing */ }
+{ONE_LINE_COMM}     { /* just skip what was found, do nothing */ }
 <<EOF>>				{ return symbol(TokenNames.EOF);}
 }

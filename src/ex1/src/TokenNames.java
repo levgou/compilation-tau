@@ -9,4 +9,5 @@ public interface TokenNames {
   public static final int RPAREN = 6;
   public static final int NUMBER = 7;
   public static final int ID = 8;
+  public static final int STRING = 9;
 }

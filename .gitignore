@@ -21,3 +21,5 @@
 **/*.synctex.gz
 **/*.toc
 
+.idea
+src/ex1/ex1.iml

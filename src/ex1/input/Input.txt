@@ -1,7 +1,12 @@
 abcd
-moish 77 999 zebra
+< > = .;:=,,,[]{}(444)
+moish 77 919 zebra
+/* what about comments?
+bla bla check123 ?!?!?!?![]...;;;-++******/
 90
-
-
-//check comments
+class
+array simple check nil
+//check-comments
 /* what about comments? */
+word
+/* verify {}[]() ?!.;*** */

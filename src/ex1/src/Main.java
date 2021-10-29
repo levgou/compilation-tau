@@ -42,7 +42,7 @@ public class Main {
                 /************************/
                 /* [6] Print to console */
                 /************************/
-
+                // System.out.println(token.val);
                 System.out.println(token);
 
                 /*********************/

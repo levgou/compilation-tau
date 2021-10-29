@@ -72,13 +72,14 @@ import java_cup.runtime.*;
 /***********************/
 LineTerminator	= \r|\n|\r\n
 WhiteSpace		= {LineTerminator} | [ \t\f]
+KEYWORD         = \b(class|nil|array|while|int|extends|return|new|if|string)\b
 INTEGER			= 0 | [1-9][0-9]*
 CHAR_OR_NUM     = [a-zA-Z0-9]
 CHAR			= [a-zA-Z]
 ID              = {CHAR}{CHAR_OR_NUM}*
-ONE_LINE_COMM   = "//"({CHAR} | {AllowedInComm})*{LineTerminator}?
-COMMENT         = "/*" [^*]{AllowedInComm}* ~"*/" | "/*" "*"+ "/"
-AllowedInComm   = "(" | ")" | "{" | "}" | "[" | "]" | "?" | "!" | "+" | "-" | "." | ";"
+ONE_LINE_COMM   = "//"({CHAR_OR_NUM} | {AllowedInComm} | {WhiteSpace})*?{LineTerminator}
+COMMENT         = "/*" ([^*/]({CHAR_OR_NUM} | {AllowedInComm} | {WhiteSpace} | {LineTerminator}))*? ~"*/"
+AllowedInComm   = "(" | ")" | "{" | "}" | "[" | "]" | "?" | "!" | "+" | "-" | "." | ";" | "*"
 
 
 /******************************/
@@ -105,10 +106,22 @@ AllowedInComm   = "(" | ")" | "{" | "}" | "[" | "]" | "?" | "!" | "+" | "-" | ".
 "/"					{ return symbol(TokenNames.DIVIDE);}
 "("					{ return symbol(TokenNames.LPAREN);}
 ")"					{ return symbol(TokenNames.RPAREN);}
+"["					{ return symbol(TokenNames.LBRACK);}
+"]"					{ return symbol(TokenNames.RBRACK);}
+"{"					{ return symbol(TokenNames.LBRACE);}
+"}"					{ return symbol(TokenNames.RBRACE);}
+","					{ return symbol(TokenNames.COMMA);}
+"."					{ return symbol(TokenNames.DOT);}
+";"					{ return symbol(TokenNames.SEMICOLON);}
+":="				{ return symbol(TokenNames.ASSIGN);}
+"="					{ return symbol(TokenNames.EQ);}
+"<"					{ return symbol(TokenNames.LT);}
+">"					{ return symbol(TokenNames.GT);}
 {INTEGER}			{ return symbol(TokenNames.NUMBER, new Integer(yytext()));}
 {ID}				{ return symbol(TokenNames.ID,     new String( yytext()));}   
 {WhiteSpace}		{ /* just skip what was found, do nothing */ }
 {COMMENT}           { /* just skip what was found, do nothing */ }
 {ONE_LINE_COMM}     { /* just skip what was found, do nothing */ }
+{KEYWORD}           {} /* skip for now */
 <<EOF>>				{ return symbol(TokenNames.EOF);}
 }

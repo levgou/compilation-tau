@@ -6,6 +6,8 @@
 /* USER CODE */
 /*************/
 import java_cup.runtime.*;
+import java.util.Map;
+import java.util.HashMap;
 
 /******************************/
 /* DOLAR DOLAR - DON'T TOUCH! */
@@ -50,42 +52,76 @@ import java_cup.runtime.*;
 /* scanner actions.                                                          */  
 /*****************************************************************************/   
 %{
-	/*********************************************************************************/
-	/* Create a new java_cup.runtime.Symbol with information about the current token */
-	/*********************************************************************************/
-	private Symbol symbol(int type)               {return new Symbol(type, yyline, yycolumn);}
-	private Symbol symbol(int type, Object value) {return new Symbol(type, yyline, yycolumn, value);}
+	    /*********************************************************************************/
+        /* Create a new java_cup.runtime.Symbol with information about the current token */
+        /*********************************************************************************/
+        public final boolean _DEBUG_PRINTS_ = false;
 
-	/*******************************************/
-	/* Enable line number extraction from main */
-	/*******************************************/
-	public int getLine() { return yyline + 1; } 
+        private Symbol symbol(int type)               {return new Symbol(type, yyline, yycolumn);}
+        private Symbol symbol(int type, Object value) {return new Symbol(type, yyline, yycolumn, value);}
 
-	/**********************************************/
-	/* Enable token position extraction from main */
-	/**********************************************/
-	public int getTokenStartPosition() { return yycolumn + 1; } 
+        /*******************************************/
+        /* Enable line number extraction from main */
+        /*******************************************/
+        public int getLine() { return yyline + 1; }
+
+        /**********************************************/
+        /* Enable token position extraction from main */
+        /**********************************************/
+        public int getTokenStartPosition() { return yycolumn + 1; }
+
+        public Map<String, Integer> keywordMapping = new HashMap<>() {{
+            put("class", TokenNames.CLASS);
+            put("nil", TokenNames.NIL);
+            put("array", TokenNames.ARRAY);
+            put("while", TokenNames.WHILE);
+            put("int", TokenNames.TYPE_INT);
+            put("extends", TokenNames.EXTENDS);
+            put("return", TokenNames.RETURN);
+            put("new", TokenNames.NEW);
+            put("if", TokenNames.IF);
+            put("string", TokenNames.TYPE_STRING);
+        }};
+
+        public int commentStartLine = -1;
+        public int commentStartColumn = -1;
+        public int multiLineCommentNestingLevel = 0 ;
+
+        public int stringStartLine = -1;
+        public int stringStartColumn = -1;
+        public String strContent = "NOT_INITIALIZED";
 %}
 
 /***********************/
 /* MACRO DECALARATIONS */
 /***********************/
 LineTerminator	= \r|\n|\r\n
-WhiteSpace		= {LineTerminator} | [ \t\f]
-KEYWORD         = \b(class|nil|array|while|int|extends|return|new|if|string)\b
+WhiteSpace		= [ \t\f]
+EMPTY_CHAR      = {WhiteSpace} | {LineTerminator}
+KEYWORD         = class|nil|array|while|int|extends|return|new|if|string
 INTEGER			= 0 | [1-9][0-9]*
 CHAR_OR_NUM     = [a-zA-Z0-9]
 CHAR			= [a-zA-Z]
+NON_CHAR        = [^a-zA-Z]
 ID              = {CHAR}{CHAR_OR_NUM}*
-ONE_LINE_COMM   = "//"({CHAR_OR_NUM} | {AllowedInComm} | {WhiteSpace})*?{LineTerminator}
-COMMENT         = "/*" ([^*/]({CHAR_OR_NUM} | {AllowedInComm} | {WhiteSpace} | {LineTerminator}))*? ~"*/"
-AllowedInComm   = "(" | ")" | "{" | "}" | "[" | "]" | "?" | "!" | "+" | "-" | "." | ";" | "*"
+ONE_LINE_COMM   = "//"({CHAR_OR_NUM} | {AllowedInComm} | {WhiteSpace} | [/*])*{LineTerminator}
+COMMENT_CONTENT = ({CHAR_OR_NUM} | {AllowedInCommMulti} | {WhiteSpace} | {LineTerminator})+
 
+AllowedInComm   = "(" | ")" | "{" | "}" | "[" | "]" | "?" | "!" | "+" | "-" | \. | \;
+AllowedInCommMulti = {AllowedInComm} | {STAR_NO_SLASH} | {SLASH_NO_STAR}
+STAR_NO_SLASH = "*"[^/]
+SLASH_NO_STAR = "/"[^*]
 
+START_MULT_COMMENT = "/*"
+END_MULT_COMMENT = "*/"
+NON_COMMENT_CONTENT = .
+
+DOUBLE_QUOTE = \"
+
+%state MULTI_COMMENT, STRING
 /******************************/
 /* DOLAR DOLAR - DON'T TOUCH! */
 /******************************/
-
 %%
 
 /************************************************************/
@@ -97,12 +133,39 @@ AllowedInComm   = "(" | ")" | "{" | "}" | "[" | "]" | "?" | "!" | "+" | "-" | ".
 /* So these regular expressions will only be matched if the   */
 /* scanner is in the start state YYINITIAL.                   */
 /**************************************************************/
-
 <YYINITIAL> {
+
+// operators
+
+// transition to comment state in order to deal with nested comments
+{ONE_LINE_COMM} {
+          if (_DEBUG_PRINTS_) {
+            System.out.println("\n### ONE LINE COMMENT ###\n" + yytext() + "#####\n");
+          }
+      }
+
+{START_MULT_COMMENT} {
+          if (_DEBUG_PRINTS_){
+              System.out.println("------------------------");
+              System.out.println("Start multiline comment");
+          }
+          multiLineCommentNestingLevel++;
+          commentStartLine = getLine();
+          commentStartColumn = getTokenStartPosition();
+          yybegin(MULTI_COMMENT);
+      }
+
+{DOUBLE_QUOTE} {
+          stringStartLine = getLine();
+          stringStartColumn = getTokenStartPosition() + 1;
+          // deals with empty strings
+          strContent = "";
+          yybegin(STRING);
+      }
 
 "+"					{ return symbol(TokenNames.PLUS);}
 "-"					{ return symbol(TokenNames.MINUS);}
-"PPP"				{ return symbol(TokenNames.TIMES);}
+"\*"				{ return symbol(TokenNames.TIMES);}
 "/"					{ return symbol(TokenNames.DIVIDE);}
 "("					{ return symbol(TokenNames.LPAREN);}
 ")"					{ return symbol(TokenNames.RPAREN);}
@@ -117,11 +180,63 @@ AllowedInComm   = "(" | ")" | "{" | "}" | "[" | "]" | "?" | "!" | "+" | "-" | ".
 "="					{ return symbol(TokenNames.EQ);}
 "<"					{ return symbol(TokenNames.LT);}
 ">"					{ return symbol(TokenNames.GT);}
-{INTEGER}			{ return symbol(TokenNames.NUMBER, new Integer(yytext()));}
-{ID}				{ return symbol(TokenNames.ID,     new String( yytext()));}   
-{WhiteSpace}		{ /* just skip what was found, do nothing */ }
-{COMMENT}           { /* just skip what was found, do nothing */ }
-{ONE_LINE_COMM}     { /* just skip what was found, do nothing */ }
-{KEYWORD}           {} /* skip for now */
-<<EOF>>				{ return symbol(TokenNames.EOF);}
+
+{KEYWORD}           { return symbol(keywordMapping.get(new String(yytext()))); }
+{INTEGER}			{ return symbol(TokenNames.NUMBER, new Integer(yytext())); }
+{ID}				{ return symbol(TokenNames.ID,     new String( yytext())); }
+{EMPTY_CHAR}		{ /* just skip what was found, do nothing */ }
+<<EOF>>				{ return symbol(TokenNames.EOF); }
+}
+
+<STRING> {
+{DOUBLE_QUOTE} {
+          if (_DEBUG_PRINTS_) System.out.println("String ended: " + strContent);
+          yybegin(YYINITIAL);
+          return symbol(TokenNames.STRING, strContent);
+      }
+
+{CHAR}* {
+          strContent = new String(yytext());
+      }
+
+{NON_CHAR} {
+          throw new Error("Bad string char: " +
+                           "<" + yytext() + "> "  +
+                           "["  + getLine()  + ":" + getTokenStartPosition() + "]" +
+                           " for string started at ["  + stringStartLine  + ":" + stringStartColumn + "]");
+      }
+}
+
+<MULTI_COMMENT> {
+
+{START_MULT_COMMENT} {
+          multiLineCommentNestingLevel++;
+          if (_DEBUG_PRINTS_) System.out.println("Comment nesting level [INCR]: " + multiLineCommentNestingLevel);
+      }
+
+{END_MULT_COMMENT} {
+          multiLineCommentNestingLevel--;
+          if (_DEBUG_PRINTS_) System.out.println("Comment nesting level [DECR]: " + multiLineCommentNestingLevel);
+
+          if (multiLineCommentNestingLevel == 0) {
+              yybegin(YYINITIAL);
+              if (_DEBUG_PRINTS_) System.out.println("------------------------");
+          }
+      }
+{COMMENT_CONTENT} {
+          if (_DEBUG_PRINTS_){
+              System.out.println("<" +  getLine() + "," + getTokenStartPosition()  + ">");
+              System.out.println("--------");
+              System.out.println(yytext());
+              System.out.println("--------");
+          }
+      }
+
+{NON_COMMENT_CONTENT} {
+          if (_DEBUG_PRINTS_){
+            System.out.println("Bad comment character" + "<" + yytext() + ">");
+          }
+          throw new Error("Bad comment character " + "<" + yytext() + "> "  + "["  + getLine()  + ":" + getTokenStartPosition() + "]" +
+          " for comment started at ["  + commentStartLine  + ":" + commentStartColumn + "]");
+      }
 }

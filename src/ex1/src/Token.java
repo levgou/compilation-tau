@@ -1,3 +1,6 @@
+import java.util.HashMap;
+import java.util.Map;
+
 public class Token {
     public final String val;
     public final int type;
@@ -22,15 +25,42 @@ public class Token {
         this.startPosition = startPosition;
     }
 
+    public static Map<Integer, String> tokenNames = new HashMap<>() {{
+        put(TokenNames.EOF, "EOF");
+        put(TokenNames.PLUS, "PLUS");
+        put(TokenNames.MINUS, "MINUS");
+        put(TokenNames.TIMES, "TIMES");
+        put(TokenNames.DIVIDE, "DIVIDE");
+        put(TokenNames.LPAREN, "LPAREN");
+        put(TokenNames.RPAREN, "RPAREN");
+        put(TokenNames.NUMBER, "NUMBER");
+        put(TokenNames.ID, "ID");
+        put(TokenNames.STRING, "STRING");
+        put(TokenNames.LBRACK, "LBRACK");
+        put(TokenNames.RBRACK, "RBRACK");
+        put(TokenNames.LBRACE, "LBRACE");
+        put(TokenNames.RBRACE, "RBRACE");
+        put(TokenNames.COMMA, "COMMA");
+        put(TokenNames.DOT, "DOT");
+        put(TokenNames.SEMICOLON, "SEMICOLON");
+        put(TokenNames.ASSIGN, "ASSIGN");
+        put(TokenNames.EQ, "EQ");
+        put(TokenNames.LT, "LT");
+        put(TokenNames.GT, "GT");
+        put(TokenNames.ARRAY, "ARRAY");
+        put(TokenNames.CLASS, "CLASS");
+        put(TokenNames.EXTENDS, "EXTENDS");
+        put(TokenNames.RETURN, "RETURN");
+        put(TokenNames.WHILE, "WHILE");
+        put(TokenNames.IF, "IF");
+        put(TokenNames.TYPE_INT, "TYPE_INT");
+        put(TokenNames.TYPE_STRING, "TYPE_STRING");
+        put(TokenNames.NIL, "NIL");
+        put(TokenNames.NEW, "NEW");
+    }};
+
     public static String tokenName(int type) {
-        switch (type) {
-            case TokenNames.ID:
-                return "ID";
-            case TokenNames.STRING:
-                return "STRING";
-            default:
-                return "UNKNOWN";
-        }
+        return tokenNames.getOrDefault(type, "UNKNOWN");
     }
 
     /**

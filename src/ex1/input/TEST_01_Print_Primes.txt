@@ -3,19 +3,40 @@ int IsPrime2orNot33a(int p)
     int i := 2;
     int j := 2;
 
+    string s1 = "abcddd"
+    string s2 = ""
+
     while (i<p)
     {
         while (j<p)
         {
             if (i*j = p)
             {
-                // p is not prime ...
+                // p is not prime ... ? { ] ( ? ! .  ]
                 return 0;
             }
             j := j+1;
         }
         i := i+1;
     }
+
+    /* some
+    multi line /* nested comment here  /* 88 */ */
+    more words */
+
+    /* nested /* with star  * *             */ */
+    /* nested /* with slash / /             */ */
+    /* nested /* with both / * / * // **    */ */
+
+    /* some
+    multi line /* nested comment here  /* 88 */ */
+    ? ! ] [ { } ( ) . ; + -
+    more words */
+
+    int temp = 89;
+
+    // delete until here.    /* BAD COMMENT /*  */
+
     return 1;
 }
 

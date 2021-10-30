@@ -102,9 +102,11 @@ KEYWORD         = class|nil|array|while|int|extends|return|new|if|string
 INTEGER			= 0 | [1-9][0-9]*
 CHAR_OR_NUM     = [a-zA-Z0-9]
 CHAR			= [a-zA-Z]
-NON_CHAR        = [^a-zA-Z]
 ID              = {CHAR}{CHAR_OR_NUM}*
-ONE_LINE_COMM   = "//"({CHAR_OR_NUM} | {AllowedInComm} | {WhiteSpace} | [/*])*{LineTerminator}
+
+ONE_LINE_COMM_STR = ({CHAR_OR_NUM} | {AllowedInComm} | {WhiteSpace} | [/*])*
+ONE_LINE_COMM   = "//"{ONE_LINE_COMM_STR}{LineTerminator}
+BAD_ONE_LINE_COMM    = "//".*{LineTerminator}
 COMMENT_CONTENT = ({CHAR_OR_NUM} | {AllowedInCommMulti} | {WhiteSpace} | {LineTerminator})+
 
 AllowedInComm   = "(" | ")" | "{" | "}" | "[" | "]" | "?" | "!" | "+" | "-" | \. | \;
@@ -116,9 +118,12 @@ START_MULT_COMMENT = "/*"
 END_MULT_COMMENT = "*/"
 NON_COMMENT_CONTENT = .
 
-DOUBLE_QUOTE = \"
+NON_CHAR        = [^a-zA-Z\"]
+DOUBLE_QUOTE    = \"
+STRING_PATTERN  = {DOUBLE_QUOTE}{CHAR}*{DOUBLE_QUOTE}
+BAD_STRING      = {DOUBLE_QUOTE}({CHAR}|{NON_CHAR})*{NON_CHAR}({CHAR}|{NON_CHAR})*{DOUBLE_QUOTE}
 
-%state MULTI_COMMENT, STRING
+%state MULTI_COMMENT
 /******************************/
 /* DOLAR DOLAR - DON'T TOUCH! */
 /******************************/
@@ -144,6 +149,16 @@ DOUBLE_QUOTE = \"
           }
       }
 
+// a comment will be resolbed as bad if the previous rule didnt match
+{BAD_ONE_LINE_COMM}  {
+          throw new Error("Bad one line comment: " +
+                           "<" + yytext() + "> "  +
+                           "["  + getLine()  + ":" + getTokenStartPosition() + "]");
+
+      }
+
+// in order to support nested comments (because / and * ) are allowed inside comments
+// we need to keep a depth index
 {START_MULT_COMMENT} {
           if (_DEBUG_PRINTS_){
               System.out.println("------------------------");
@@ -155,12 +170,22 @@ DOUBLE_QUOTE = \"
           yybegin(MULTI_COMMENT);
       }
 
-{DOUBLE_QUOTE} {
-          stringStartLine = getLine();
-          stringStartColumn = getTokenStartPosition() + 1;
-          // deals with empty strings
-          strContent = "";
-          yybegin(STRING);
+// string handling:
+{STRING_PATTERN}    {
+          String matchedStr = new String(yytext());
+          // remove matched "
+          String noParensStr = matchedStr.substring(1, matchedStr.length() -1);
+          return symbol(TokenNames.STRING, noParensStr);
+      }
+{BAD_STRING}        {
+          throw new Error("Bad string: " +
+                           "<" + yytext() + "> "  +
+                           "["  + getLine()  + ":" + getTokenStartPosition() + "]");
+      }
+{DOUBLE_QUOTE}      {
+          throw new Error("Not closed double quote: " +
+                           "<" + yytext() + "> "  +
+                           "["  + getLine()  + ":" + getTokenStartPosition() + "]");
       }
 
 "+"					{ return symbol(TokenNames.PLUS);}
@@ -186,25 +211,6 @@ DOUBLE_QUOTE = \"
 {ID}				{ return symbol(TokenNames.ID,     new String( yytext())); }
 {EMPTY_CHAR}		{ /* just skip what was found, do nothing */ }
 <<EOF>>				{ return symbol(TokenNames.EOF); }
-}
-
-<STRING> {
-{DOUBLE_QUOTE} {
-          if (_DEBUG_PRINTS_) System.out.println("String ended: " + strContent);
-          yybegin(YYINITIAL);
-          return symbol(TokenNames.STRING, strContent);
-      }
-
-{CHAR}* {
-          strContent = new String(yytext());
-      }
-
-{NON_CHAR} {
-          throw new Error("Bad string char: " +
-                           "<" + yytext() + "> "  +
-                           "["  + getLine()  + ":" + getTokenStartPosition() + "]" +
-                           " for string started at ["  + stringStartLine  + ":" + stringStartColumn + "]");
-      }
 }
 
 <MULTI_COMMENT> {

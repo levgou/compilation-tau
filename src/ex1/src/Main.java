@@ -38,7 +38,16 @@ public class Main {
             /* [5] Main reading tokens loop */
             /********************************/
             while (s.sym != TokenNames.EOF) {
-                Token token = new Token(s.value, s.sym, l.getLine(), l.getTokenStartPosition());
+                Token token;
+                
+                try {
+                    token = new Token(s.value, s.sym, l.getLine(), l.getTokenStartPosition());
+                } catch (Exception e) {
+                    file_writer = new PrintWriter(outputFilename);
+                    file_writer.println("ERROR");
+                    break;
+                }
+
                 /************************/
                 /* [6] Print to console */
                 /************************/

@@ -70,7 +70,7 @@ import java.util.HashMap;
         /**********************************************/
         public int getTokenStartPosition() { return yycolumn + 1; }
 
-        public Map<String, Integer> keywordMapping = new HashMap<>() {{
+        public Map<String, Integer> keywordMapping = new HashMap<String, Integer>() {{
             put("class", TokenNames.CLASS);
             put("nil", TokenNames.NIL);
             put("array", TokenNames.ARRAY);
@@ -106,24 +106,23 @@ ID              = {CHAR}{CHAR_OR_NUM}*
 
 ONE_LINE_COMM_STR = ({CHAR_OR_NUM} | {AllowedInComm} | {WhiteSpace} | [/*])*
 ONE_LINE_COMM   = "//"{ONE_LINE_COMM_STR}{LineTerminator}
-BAD_ONE_LINE_COMM    = "//".*{LineTerminator}
-COMMENT_CONTENT = ({CHAR_OR_NUM} | {AllowedInCommMulti} | {WhiteSpace} | {LineTerminator})+
 
-AllowedInComm   = "(" | ")" | "{" | "}" | "[" | "]" | "?" | "!" | "+" | "-" | \. | \;
-AllowedInCommMulti = {AllowedInComm} | {STAR_NO_SLASH} | {SLASH_NO_STAR}
-STAR_NO_SLASH = "*"[^/]
-SLASH_NO_STAR = "/"[^*]
+COMMENT_CONTENT = ({CHAR_OR_NUM} | {AllowedInCommMulti} | {WhiteSpace} | {LineTerminator})+
+MULTI_LINE_COMM = {START_MULT_COMMENT}({COMMENT_CONTENT})*?{END_MULT_COMMENT}
+
+AllowedInComm   = "(" | ")" | "{" | "}" | "[" | "]" | "?" | "!" | "+" | "-" | \. | \; | "/"
+AllowedInCommMulti = {AllowedInComm} | {STAR_NO_SLASH}
 
 START_MULT_COMMENT = "/*"
 END_MULT_COMMENT = "*/"
-NON_COMMENT_CONTENT = .
+STAR_NO_SLASH = "*"[^/]
 
 NON_CHAR        = [^a-zA-Z\"]
 DOUBLE_QUOTE    = \"
 STRING_PATTERN  = {DOUBLE_QUOTE}{CHAR}*{DOUBLE_QUOTE}
 BAD_STRING      = {DOUBLE_QUOTE}({CHAR}|{NON_CHAR})*{NON_CHAR}({CHAR}|{NON_CHAR})*{DOUBLE_QUOTE}
 
-%state MULTI_COMMENT
+
 /******************************/
 /* DOLAR DOLAR - DON'T TOUCH! */
 /******************************/
@@ -143,32 +142,18 @@ BAD_STRING      = {DOUBLE_QUOTE}({CHAR}|{NON_CHAR})*{NON_CHAR}({CHAR}|{NON_CHAR}
 // operators
 
 // transition to comment state in order to deal with nested comments
-{ONE_LINE_COMM} {
+{ONE_LINE_COMM} {   
           if (_DEBUG_PRINTS_) {
             System.out.println("\n### ONE LINE COMMENT ###\n" + yytext() + "#####\n");
           }
       }
 
-// a comment will be resolbed as bad if the previous rule didnt match
-{BAD_ONE_LINE_COMM}  {
-          throw new Error("Bad one line comment: " +
+{START_MULT_COMMENT} {
+	throw new Error("Not closed comment: " +
                            "<" + yytext() + "> "  +
                            "["  + getLine()  + ":" + getTokenStartPosition() + "]");
+}
 
-      }
-
-// in order to support nested comments (because / and * ) are allowed inside comments
-// we need to keep a depth index
-{START_MULT_COMMENT} {
-          if (_DEBUG_PRINTS_){
-              System.out.println("------------------------");
-              System.out.println("Start multiline comment");
-          }
-          multiLineCommentNestingLevel++;
-          commentStartLine = getLine();
-          commentStartColumn = getTokenStartPosition();
-          yybegin(MULTI_COMMENT);
-      }
 
 // string handling:
 {STRING_PATTERN}    {
@@ -187,6 +172,7 @@ BAD_STRING      = {DOUBLE_QUOTE}({CHAR}|{NON_CHAR})*{NON_CHAR}({CHAR}|{NON_CHAR}
                            "<" + yytext() + "> "  +
                            "["  + getLine()  + ":" + getTokenStartPosition() + "]");
       }
+
 
 "+"					{ return symbol(TokenNames.PLUS);}
 "-"					{ return symbol(TokenNames.MINUS);}
@@ -207,42 +193,10 @@ BAD_STRING      = {DOUBLE_QUOTE}({CHAR}|{NON_CHAR})*{NON_CHAR}({CHAR}|{NON_CHAR}
 ">"					{ return symbol(TokenNames.GT);}
 
 {KEYWORD}           { return symbol(keywordMapping.get(new String(yytext()))); }
-{INTEGER}			{ return symbol(TokenNames.NUMBER, new Integer(yytext())); }
+{INTEGER}			{ return symbol(TokenNames.INT, new Integer(yytext())); }
 {ID}				{ return symbol(TokenNames.ID,     new String( yytext())); }
 {EMPTY_CHAR}		{ /* just skip what was found, do nothing */ }
+{MULTI_LINE_COMM}   { /* just skip what was found, do nothing */ } 
 <<EOF>>				{ return symbol(TokenNames.EOF); }
 }
 
-<MULTI_COMMENT> {
-
-{START_MULT_COMMENT} {
-          multiLineCommentNestingLevel++;
-          if (_DEBUG_PRINTS_) System.out.println("Comment nesting level [INCR]: " + multiLineCommentNestingLevel);
-      }
-
-{END_MULT_COMMENT} {
-          multiLineCommentNestingLevel--;
-          if (_DEBUG_PRINTS_) System.out.println("Comment nesting level [DECR]: " + multiLineCommentNestingLevel);
-
-          if (multiLineCommentNestingLevel == 0) {
-              yybegin(YYINITIAL);
-              if (_DEBUG_PRINTS_) System.out.println("------------------------");
-          }
-      }
-{COMMENT_CONTENT} {
-          if (_DEBUG_PRINTS_){
-              System.out.println("<" +  getLine() + "," + getTokenStartPosition()  + ">");
-              System.out.println("--------");
-              System.out.println(yytext());
-              System.out.println("--------");
-          }
-      }
-
-{NON_COMMENT_CONTENT} {
-          if (_DEBUG_PRINTS_){
-            System.out.println("Bad comment character" + "<" + yytext() + ">");
-          }
-          throw new Error("Bad comment character " + "<" + yytext() + "> "  + "["  + getLine()  + ":" + getTokenStartPosition() + "]" +
-          " for comment started at ["  + commentStartLine  + ":" + commentStartColumn + "]");
-      }
-}

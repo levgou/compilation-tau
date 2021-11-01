@@ -1,5 +1,7 @@
 import java.util.HashMap;
 import java.util.Map;
+import java.lang.Exception;
+
 
 public class Token {
     public final String val;
@@ -8,12 +10,20 @@ public class Token {
     public final int line;
     public final int startPosition;
 
+    public static final int LIMIT = ((1 << 15)-1);
+
 
     public Token(Object val, int type, int line, int startPosition) {
         // String representation of a string has Enclosing ", ex: "someStringHere"
         if (type == TokenNames.STRING) {
             this.val = "\"" + val.toString() + "\"";
         } else if (val != null) {
+            if (type == TokenNames.INT) {
+                int number = (int) val;
+                if (number > LIMIT || number < 0) {
+                    throw new IllegalArgumentException();
+                }
+            }
             this.val = val.toString();
         } else {
             this.val = "";
@@ -25,7 +35,7 @@ public class Token {
         this.startPosition = startPosition;
     }
 
-    public static Map<Integer, String> tokenNames = new HashMap<>() {{
+    public static Map<Integer, String> tokenNames = new HashMap<Integer, String>() {{
         put(TokenNames.EOF, "EOF");
         put(TokenNames.PLUS, "PLUS");
         put(TokenNames.MINUS, "MINUS");
@@ -33,7 +43,7 @@ public class Token {
         put(TokenNames.DIVIDE, "DIVIDE");
         put(TokenNames.LPAREN, "LPAREN");
         put(TokenNames.RPAREN, "RPAREN");
-        put(TokenNames.NUMBER, "NUMBER");
+        put(TokenNames.INT, "INT");
         put(TokenNames.ID, "ID");
         put(TokenNames.STRING, "STRING");
         put(TokenNames.LBRACK, "LBRACK");

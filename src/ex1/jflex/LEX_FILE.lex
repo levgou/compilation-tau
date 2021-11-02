@@ -99,7 +99,7 @@ LineTerminator	= \r|\n|\r\n
 WhiteSpace		= [ \t\f]
 EMPTY_CHAR      = {WhiteSpace} | {LineTerminator}
 KEYWORD         = class|nil|array|while|int|extends|return|new|if|string
-INTEGER			= 0 | [1-9][0-9]*
+INTEGER			= 0 | [1-9][0-9]{1,6}
 CHAR_OR_NUM     = [a-zA-Z0-9]
 CHAR			= [a-zA-Z]
 ID              = {CHAR}{CHAR_OR_NUM}*
@@ -114,14 +114,17 @@ AllowedInComm   = "(" | ")" | "{" | "}" | "[" | "]" | "?" | "!" | "+" | "-" | \.
 AllowedInCommMulti = {AllowedInComm} | {STAR_NO_SLASH}
 
 START_MULT_COMMENT = "/*"
-END_MULT_COMMENT = "*/"
-STAR_NO_SLASH = "*"[^/]
+END_MULT_COMMENT = ("*")*"*/" 
+STAR_NO_SLASH = [^/]"*"[^/]
+
 
 NON_CHAR        = [^a-zA-Z\"]
 DOUBLE_QUOTE    = \"
 STRING_PATTERN  = {DOUBLE_QUOTE}{CHAR}*{DOUBLE_QUOTE}
 BAD_STRING      = {DOUBLE_QUOTE}({CHAR}|{NON_CHAR})*{NON_CHAR}({CHAR}|{NON_CHAR})*{DOUBLE_QUOTE}
-BAD_INTEGER     = 0[0-9]*
+BAD_INTEGER     = 0[0-9]{1,6}
+
+NO_MATCH = .
 
 
 /******************************/
@@ -208,6 +211,10 @@ BAD_INTEGER     = 0[0-9]*
 {ID}				{ return symbol(TokenNames.ID,     new String( yytext())); }
 {EMPTY_CHAR}		{ /* just skip what was found, do nothing */ }
 {MULTI_LINE_COMM}   { /* just skip what was found, do nothing */ } 
+
+{NO_MATCH} {
+	return symbol(TokenNames.INVALID);
+}
 <<EOF>>				{ return symbol(TokenNames.EOF); }
 }
 

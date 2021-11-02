@@ -1,6 +1,7 @@
 import java.util.HashMap;
 import java.util.Map;
 import java.lang.Exception;
+import java.lang.Math;
 
 
 public class Token {
@@ -21,10 +22,17 @@ public class Token {
             throw new IllegalArgumentException();
         } else if (val != null) {
             if (type == TokenNames.INT) {
-                int number = (int) val;
-                if (number > LIMIT || number < 0) {
+                // int number = Integer.parseInt(val);
+                try {
+                    int number = (int) val;
+                    if (number > LIMIT || number < 0) {
+                        throw new IllegalArgumentException();
+                    }
+                } catch (Exception e){
                     throw new IllegalArgumentException();
                 }
+                
+
             }
             this.val = val.toString();
         } else {

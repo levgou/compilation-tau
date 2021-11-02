@@ -2,12 +2,17 @@ abcd
 < > = .;:=,,,[]{}(444)
 moish 77 919 zebra
 /* what about comments?
-bla bla check123 ?!?!?!?![]...;;;-++*****e*/
-90000
-class
+bla bla check123 ?!?!?!?![]...;;;-++*/
+
+class // <
+"string"
 array simple check nil
 //check-comments
 /* what about comments? */
+not
+///* verify {}[]() ?!.;*** */
+ano
+/*abc*/
 word
-/* verify {}[]() ?!.;*** */
+
 

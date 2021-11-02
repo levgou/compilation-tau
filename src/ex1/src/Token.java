@@ -17,6 +17,8 @@ public class Token {
         // String representation of a string has Enclosing ", ex: "someStringHere"
         if (type == TokenNames.STRING) {
             this.val = "\"" + val.toString() + "\"";
+        } else if (type == TokenNames.INVALID) {
+            throw new IllegalArgumentException();
         } else if (val != null) {
             if (type == TokenNames.INT) {
                 int number = (int) val;

@@ -121,6 +121,7 @@ NON_CHAR        = [^a-zA-Z\"]
 DOUBLE_QUOTE    = \"
 STRING_PATTERN  = {DOUBLE_QUOTE}{CHAR}*{DOUBLE_QUOTE}
 BAD_STRING      = {DOUBLE_QUOTE}({CHAR}|{NON_CHAR})*{NON_CHAR}({CHAR}|{NON_CHAR})*{DOUBLE_QUOTE}
+BAD_INTEGER     = 0[0-9]*
 
 
 /******************************/
@@ -149,9 +150,10 @@ BAD_STRING      = {DOUBLE_QUOTE}({CHAR}|{NON_CHAR})*{NON_CHAR}({CHAR}|{NON_CHAR}
       }
 
 {START_MULT_COMMENT} {
-	throw new Error("Not closed comment: " +
-                           "<" + yytext() + "> "  +
-                           "["  + getLine()  + ":" + getTokenStartPosition() + "]");
+	return symbol(TokenNames.INVALID);
+//	throw new Error("Not closed comment: " +
+//                          "<" + yytext() + "> "  +
+//                           "["  + getLine()  + ":" + getTokenStartPosition() + "]");
 }
 
 
@@ -163,15 +165,24 @@ BAD_STRING      = {DOUBLE_QUOTE}({CHAR}|{NON_CHAR})*{NON_CHAR}({CHAR}|{NON_CHAR}
           return symbol(TokenNames.STRING, noParensStr);
       }
 {BAD_STRING}        {
-          throw new Error("Bad string: " +
-                           "<" + yytext() + "> "  +
-                           "["  + getLine()  + ":" + getTokenStartPosition() + "]");
+	 return symbol(TokenNames.INVALID);
+//          throw new Error("Bad string: " +
+//                           "<" + yytext() + "> "  +
+//                           "["  + getLine()  + ":" + getTokenStartPosition() + "]");
       }
 {DOUBLE_QUOTE}      {
-          throw new Error("Not closed double quote: " +
-                           "<" + yytext() + "> "  +
-                           "["  + getLine()  + ":" + getTokenStartPosition() + "]");
+	 return symbol(TokenNames.INVALID);
+//          throw new Error("Not closed double quote: " +
+//                           "<" + yytext() + "> "  +
+//                           "["  + getLine()  + ":" + getTokenStartPosition() + "]");
       }
+
+{BAD_INTEGER} {
+	 return symbol(TokenNames.INVALID);
+//	throw new Error("Not closed double quote: " +
+//                           "<" + yytext() + "> "  +
+//                           "["  + getLine()  + ":" + getTokenStartPosition() + "]");
+}
 
 
 "+"					{ return symbol(TokenNames.PLUS);}

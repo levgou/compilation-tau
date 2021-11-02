@@ -31,4 +31,6 @@ public interface TokenNames {
   public static final int TYPE_STRING = 28;
   public static final int NIL = 29;
   public static final int NEW = 30;
+
+  public static final int INVALID = 31;
 }
